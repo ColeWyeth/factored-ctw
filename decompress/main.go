@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/fumin/ctw"
+	"github.com/ColeWyeth/factored-ctw"
 )
 
 var depth = flag.Int("depth", 48, "depth of Context Tree Weighting")
