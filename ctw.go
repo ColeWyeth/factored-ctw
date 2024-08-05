@@ -229,7 +229,7 @@ func (cr *CTWReverter) Unobserve() {
 
 // An FCTW is a probabilistic model for structured binary data constructed from
 // CTW models for each bit position within a block.
-// TODO: FCTW implements the arithmetic coding Model interface
+// FCTW implements the arithmetic coding Model interface
 type FCTW struct {
 	trees []*CTW
 	block_len int
@@ -241,7 +241,7 @@ type FCTW struct {
 // The initial index position is len(bits) mod block_len. 
 func NewFCTW(block_len int, bits []int) *FCTW {
 	trees := make([]*CTW, block_len)
-	for i := 1; i < block_len+1; i++ {
+	for i := 0; i < block_len; i++ {
 		trees[i] = NewCTW(bits) 
 	}
 	index := len(bits) % block_len
@@ -267,7 +267,7 @@ func (model *FCTW) Prob0() float64 {
 
 // Observe updates the context tree, given that the sequence is followed by bit.
 func (model *FCTW) Observe(bit int) {
-	for i := 1; i < model.block_len+1; i++ {
+	for i := 0; i < model.block_len; i++ {
 		model.trees[i].observe(bit) 
 	}
 }
