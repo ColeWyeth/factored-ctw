@@ -7,7 +7,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/fumin/ctw/ac/witten"
+	"github.com/ColeWyeth/factored-ctw/ac/witten"
 )
 
 // Compress compresses the named file using arithmetic coding supplied with a Context Tree Weighting probabilistic model of depth depth.

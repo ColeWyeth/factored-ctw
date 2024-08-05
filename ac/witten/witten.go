@@ -3,7 +3,7 @@
 package witten
 
 import (
-	"github.com/fumin/ctw/ac"
+	"github.com/ColeWyeth/factored-ctw/ac"
 )
 
 const (

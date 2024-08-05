@@ -9,7 +9,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/fumin/ctw/ac/witten"
+	"github.com/ColeWyeth/factored-ctw/ac/witten"
 )
 
 // TestUpdateSunehag tests the examples in the slides by Peter Sunehag and Marcus Hutter

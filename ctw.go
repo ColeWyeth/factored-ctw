@@ -226,3 +226,48 @@ func (cr *CTWReverter) Unobserve() {
 	cr.model.bits[0] = cr.bits[btIdx]
 	cr.bits = cr.bits[:btIdx]
 }
+
+// An FCTW is a probabilistic model for structured binary data constructed from
+// CTW models for each bit position within a block.
+// TODO: FCTW implements the arithmetic coding Model interface
+type FCTW struct {
+	trees []*CTW
+	block_len int
+	index int
+} 
+
+// NewFCTW returns a new FCTW whose context tree's depth is len(bits).
+// The prior context of the trees is given by bits.
+// The initial index position is len(bits) mod block_len. 
+func NewFCTW(block_len int, bits []int) *FCTW {
+	trees := make([]*CTW, block_len)
+	for i := 1; i < block_len+1; i++ {
+		trees[i] = NewCTW(bits) 
+	}
+	index := len(bits) % block_len
+	model := &FCTW{
+		trees,
+		block_len,
+		index,
+	}
+	return model
+}
+
+// Prob0 returns the probability that the next bit be zero.
+func (model *FCTW) Prob0() float64 {
+	tree := model.trees[model.index]
+	before := tree.root.LogProb
+	traversal := update(tree.root, tree.bits, 0)
+	after := tree.root.LogProb
+
+	revert(traversal)
+
+	return math.Exp(after - before)
+}
+
+// Observe updates the context tree, given that the sequence is followed by bit.
+func (model *FCTW) Observe(bit int) {
+	for i := 1; i < model.block_len+1; i++ {
+		model.trees[i].observe(bit) 
+	}
+}
