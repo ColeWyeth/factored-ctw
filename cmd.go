@@ -10,8 +10,8 @@ import (
 	"github.com/ColeWyeth/factored-ctw/ac/witten"
 )
 
-// Compress compresses the named file using arithmetic coding supplied with a Context Tree Weighting probabilistic model of depth depth.
-// The compressed result is written to w.
+// (Compress) compresses the named file using arithmetic coding supplied with a Context Tree Weighting probabilistic model of depth <depth>.
+// The compressed result is written to <w>.
 func Compress(w io.Writer, name string, depth int) error {
 	// Write file size
 	fi, err := os.Stat(name)
@@ -40,14 +40,16 @@ func Compress(w io.Writer, name string, depth int) error {
 	stopReader := make(chan struct{}, 1)
 	go func() {
 		defer close(src)
+		// this routine pauses when the following function produces an error
 		errc <- func() error {
 			scanner := bufio.NewScanner(f)
-			scanner.Split(bufio.ScanBytes)
+			scanner.Split(bufio.ScanBytes) //split by byte
 			for scanner.Scan() {
 				var bt byte = scanner.Bytes()[0]
 				for i := uint(0); i < 8; i++ {
 					select {
-					case src <- ((int(bt) & (1 << i)) >> i):
+					// read a byte of data util stop is read
+					case src <- ((int(bt) & (1 << i)) >> i): //get the bit on the i-th position
 					case <-stopReader:
 					}
 				}
@@ -59,16 +61,17 @@ func Compress(w io.Writer, name string, depth int) error {
 		}()
 	}()
 
-	// Collect encoded bits into bytes and write to w
+	// Collect encoded bits into bytes and write to <w>
 	dst := make(chan int)
 	dsterrc := make(chan error, 1)
 	go func() {
 		dsterrc <- func() error {
 			defer func() { stopReader <- struct{}{} }()
+			// bit flows into <dst> channel and restored as bytes in <bt>
 			buf := []byte{0}
 			var bt *byte = &buf[0]
 			var i uint = 0
-			for b := range dst {
+			for b := range dst { // loop until <dst> is closed
 				if b == 1 {
 					*bt |= (1 << i)
 				}
@@ -94,12 +97,15 @@ func Compress(w io.Writer, name string, depth int) error {
 	model := NewCTW(make([]int, depth))
 	witten.Encode(dst, src, model)
 
+	// wait for bit extraction
 	if err := <-errc; err != nil {
 		return err
 	}
+	// wait for bit restore
 	if err := <-dsterrc; err != nil {
 		return err
 	}
+
 	return nil
 }
 

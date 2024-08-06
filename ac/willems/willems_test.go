@@ -5,7 +5,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/fumin/ctw/ac"
+	"github.com/ColeWyeth/factored-ctw/ac"
 )
 
 func TestEncodeConstModel(t *testing.T) {

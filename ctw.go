@@ -2,9 +2,10 @@
 // Also contained is an implementation of the Rissanen-Langdon Arithmetic Coding algorithm, which is combined with Context Tree Weighting to create a lossless compression/decompression utility.
 //
 // Below is an example of using this package to compress Lincoln's Gettysburg address:
-//    go run compress/main.go gettysburg.txt > gettys.ctw
-//    cat gettys.ctw | go run decompress/main.go > gettys.dctw
-//    diff gettysburg.txt gettys.dctw
+//
+//	go run compress/main.go gettysburg.txt > gettys.ctw
+//	cat gettys.ctw | go run decompress/main.go > gettys.dctw
+//	diff gettysburg.txt gettys.dctw
 //
 // Reference:
 // F.M.J. Willems and Tj. J. Tjalkens, Complexity Reduction of the Context-Tree Weighting Algorithm: A Study for KPN Research, Technical University of Eindhoven, EIDMA Report RS.97.01.
@@ -150,25 +151,25 @@ func krichevskyTrofimov(node *treeNode, bit int) {
 // A CTW is a Context Tree Weighting based probabilistic model for binary data.
 // CTW implements the arithmetic coding Model interface.
 type CTW struct {
-	bits []int
-	root *treeNode
+	Bits []int
+	Root *treeNode
 }
 
 // NewCTW returns a new CTW whose context tree's depth is len(bits).
 // The prior context of the tree is given by bits.
 func NewCTW(bits []int) *CTW {
 	model := &CTW{
-		bits: bits,
-		root: &treeNode{},
+		Bits: bits,
+		Root: &treeNode{},
 	}
 	return model
 }
 
 // Prob0 returns the probability that the next bit be zero.
 func (model *CTW) Prob0() float64 {
-	before := model.root.LogProb
-	traversal := update(model.root, model.bits, 0)
-	after := model.root.LogProb
+	before := model.Root.LogProb
+	traversal := update(model.Root, model.Bits, 0)
+	after := model.Root.LogProb
 
 	revert(traversal)
 
@@ -181,11 +182,11 @@ func (model *CTW) Observe(bit int) {
 }
 
 func (model *CTW) observe(bit int) []snapshot {
-	traversal := update(model.root, model.bits, bit)
-	for i := 1; i < len(model.bits); i++ {
-		model.bits[i-1] = model.bits[i]
+	traversal := update(model.Root, model.Bits, bit)
+	for i := 1; i < len(model.Bits); i++ {
+		model.Bits[i-1] = model.Bits[i]
 	}
-	model.bits[len(model.bits)-1] = bit
+	model.Bits[len(model.Bits)-1] = bit
 	return traversal
 }
 
@@ -208,7 +209,7 @@ func (cr *CTWReverter) Prob0() float64 {
 }
 
 func (cr *CTWReverter) Observe(bit int) {
-	cr.bits = append(cr.bits, cr.model.bits[0])
+	cr.bits = append(cr.bits, cr.model.Bits[0])
 	cr.traversals = append(cr.traversals, cr.model.observe(bit))
 }
 
@@ -219,11 +220,11 @@ func (cr *CTWReverter) Unobserve() {
 	cr.traversals = cr.traversals[:tvIdx]
 
 	// Revert the context bits.
-	for i := len(cr.model.bits) - 1; i > 0; i-- {
-		cr.model.bits[i] = cr.model.bits[i-1]
+	for i := len(cr.model.Bits) - 1; i > 0; i-- {
+		cr.model.Bits[i] = cr.model.Bits[i-1]
 	}
 	btIdx := len(cr.bits) - 1
-	cr.model.bits[0] = cr.bits[btIdx]
+	cr.model.Bits[0] = cr.bits[btIdx]
 	cr.bits = cr.bits[:btIdx]
 }
 
@@ -231,18 +232,18 @@ func (cr *CTWReverter) Unobserve() {
 // CTW models for each bit position within a block.
 // FCTW implements the arithmetic coding Model interface
 type FCTW struct {
-	trees []*CTW
-	block_len int
-	index int
-} 
+	Trees     []*CTW
+	Block_len int
+	Index     int
+}
 
 // NewFCTW returns a new FCTW whose context tree's depth is len(bits).
 // The prior context of the trees is given by bits.
-// The initial index position is len(bits) mod block_len. 
+// The initial index position is len(bits) mod block_len.
 func NewFCTW(block_len int, bits []int) *FCTW {
 	trees := make([]*CTW, block_len)
 	for i := 0; i < block_len; i++ {
-		trees[i] = NewCTW(bits) 
+		trees[i] = NewCTW(bits)
 	}
 	index := len(bits) % block_len
 	model := &FCTW{
@@ -255,10 +256,10 @@ func NewFCTW(block_len int, bits []int) *FCTW {
 
 // Prob0 returns the probability that the next bit be zero.
 func (model *FCTW) Prob0() float64 {
-	tree := model.trees[model.index]
-	before := tree.root.LogProb
-	traversal := update(tree.root, tree.bits, 0)
-	after := tree.root.LogProb
+	tree := model.Trees[model.Index]
+	before := tree.Root.LogProb
+	traversal := update(tree.Root, tree.Bits, 0)
+	after := tree.Root.LogProb
 
 	revert(traversal)
 
@@ -267,7 +268,7 @@ func (model *FCTW) Prob0() float64 {
 
 // Observe updates the context tree, given that the sequence is followed by bit.
 func (model *FCTW) Observe(bit int) {
-	for i := 0; i < model.block_len; i++ {
-		model.trees[i].observe(bit) 
+	for i := 0; i < model.Block_len; i++ {
+		model.Trees[i].observe(bit)
 	}
 }

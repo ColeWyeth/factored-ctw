@@ -3,10 +3,10 @@ package main
 import (
 	"flag"
 	// "log"
-	"os"
 	"bufio"
-	"fmt"
 	"encoding/json"
+	"fmt"
+	"os"
 
 	"github.com/ColeWyeth/factored-ctw"
 	"github.com/ColeWyeth/factored-ctw/ac"
@@ -14,7 +14,7 @@ import (
 
 var depth = flag.Int("depth", 48, "depth of Context Tree Weighting")
 
-func train_model(name string, model ac.Model){
+func train_model(name string, model ac.Model) {
 
 	// Borrowed from Encode function
 
@@ -58,16 +58,21 @@ func train_model(name string, model ac.Model){
 
 	// TODO: Dump the model as json
 	f1, err := os.Create("model.json")
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
 	jsonBytes, err := json.Marshal(model)
-    if err != nil {
-        fmt.Println("Error:", err)
-        return
-    }
-    fmt.Println(string(jsonBytes))
-    f1.Close()
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	fmt.Println(string(jsonBytes))
+	f1.Write(jsonBytes)
+	f1.Close()
 }
 
-func main(){
+func main() {
 	factored_ctw := ctw.NewFCTW(8, make([]int, 48))
 	fmt.Printf("%e\n", factored_ctw.Prob0())
 	train_model("gettysburg.txt", factored_ctw)
