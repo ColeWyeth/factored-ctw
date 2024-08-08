@@ -35,12 +35,12 @@ func logaddexp(x, y float64) float64 {
 type treeNode struct {
 	LogProb float64 // log probability of suffix
 
-	a    uint32  // number of zeros with suffix
-	b    uint32  // number of ones with suffix
-	lktp float64 // log probability of the Krichevsky-Trofimov (KT) Estimation, given our current number of zeros and ones.
+	A    uint32  // number of zerRos with suffix
+	B    uint32  // number of ones with suffix
+	Lktp float64 // log probability of the Krichevsky-Trofimov (KT) Estimation, given our current number of zeros and ones.
 
-	left  *treeNode // the sub-suffix that ends with one
-	right *treeNode // the sub-suffix that ends with zero
+	Left  *treeNode // the sub-suffix that ends with one
+	Right *treeNode // the sub-suffix that ends with zero
 }
 
 type snapshot struct {
@@ -52,9 +52,9 @@ type snapshot struct {
 func revert(traversed []snapshot) {
 	for i, ss := range traversed {
 		node := ss.node
-		node.lktp = ss.state.lktp
-		node.a = ss.state.a
-		node.b = ss.state.b
+		node.Lktp = ss.state.Lktp
+		node.A = ss.state.A
+		node.B = ss.state.B
 		node.LogProb = ss.state.LogProb
 
 		// The memory releasing logic below saves memory.
@@ -65,10 +65,10 @@ func revert(traversed []snapshot) {
 		if i < len(traversed)-1 {
 			next := traversed[i+1]
 			if next.isNew {
-				if next.node == node.right {
-					node.right = nil
+				if next.node == node.Right {
+					node.Right = nil
 				} else {
-					node.left = nil
+					node.Left = nil
 				}
 				break
 			}
@@ -94,17 +94,17 @@ func update(root *treeNode, bits []int, bit int) []snapshot {
 	for d := 0; d < len(bits); d++ {
 		isNew := false
 		if bits[len(bits)-1-d] == 0 {
-			if node.right == nil {
-				node.right = &treeNode{}
+			if node.Right == nil {
+				node.Right = &treeNode{}
 				isNew = true
 			}
-			node = node.right
+			node = node.Right
 		} else {
-			if node.left == nil {
-				node.left = &treeNode{}
+			if node.Left == nil {
+				node.Left = &treeNode{}
 				isNew = true
 			}
-			node = node.left
+			node = node.Left
 		}
 
 		traversed = append(traversed, snapshot{node: node, state: *node, isNew: isNew})
@@ -116,19 +116,19 @@ func update(root *treeNode, bits []int, bit int) []snapshot {
 		ss := traversed[i]
 		node := ss.node
 
-		if node.left != nil || node.right != nil {
+		if node.Left != nil || node.Right != nil {
 			var lp float64 = 0
-			if node.left != nil {
-				lp = node.left.LogProb
+			if node.Left != nil {
+				lp = node.Left.LogProb
 			}
 			var rp float64 = 0
-			if node.right != nil {
-				rp = node.right.LogProb
+			if node.Right != nil {
+				rp = node.Right.LogProb
 			}
 			w := 0.5
-			node.LogProb = logaddexp(math.Log(w)+node.lktp, math.Log(1-w)+lp+rp)
+			node.LogProb = logaddexp(math.Log(w)+node.Lktp, math.Log(1-w)+lp+rp)
 		} else {
-			node.LogProb = node.lktp
+			node.LogProb = node.Lktp
 		}
 	}
 
@@ -137,14 +137,14 @@ func update(root *treeNode, bits []int, bit int) []snapshot {
 
 // krichevskyTrofimov updates the Krichevsky-Trofimov estimate of a node given a new observed bit.
 func krichevskyTrofimov(node *treeNode, bit int) {
-	a := float64(node.a)
-	b := float64(node.b)
+	a := float64(node.A)
+	b := float64(node.B)
 	if bit == 0 {
-		node.lktp = node.lktp + math.Log(a+0.5) - math.Log(a+b+1)
-		node.a += 1
+		node.Lktp = node.Lktp + math.Log(a+0.5) - math.Log(a+b+1)
+		node.A += 1
 	} else {
-		node.lktp = node.lktp + math.Log(b+0.5) - math.Log(a+b+1)
-		node.b += 1
+		node.Lktp = node.Lktp + math.Log(b+0.5) - math.Log(a+b+1)
+		node.B += 1
 	}
 }
 

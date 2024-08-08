@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ColeWyeth/factored-ctw"
+	ctw "github.com/ColeWyeth/factored-ctw"
 	"github.com/ColeWyeth/factored-ctw/ac"
 )
 
@@ -67,7 +67,7 @@ func train_model(name string, model ac.Model) {
 		fmt.Println("Error:", err)
 		return
 	}
-	fmt.Println(string(jsonBytes))
+	//fmt.Println(string(jsonBytes))
 	f1.Write(jsonBytes)
 	f1.Close()
 }

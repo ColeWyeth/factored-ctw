@@ -3,12 +3,19 @@ package ctw
 import (
 	"bufio"
 	"bytes"
+	"embed"
 	"encoding/binary"
+	"encoding/json"
 	"io"
 	"os"
 
 	"github.com/ColeWyeth/factored-ctw/ac/witten"
 )
+
+// embed json file
+//
+//go:embed model.json
+var eFS embed.FS
 
 // (Compress) compresses the named file using arithmetic coding supplied with a Context Tree Weighting probabilistic model of depth <depth>.
 // The compressed result is written to <w>.
@@ -94,7 +101,18 @@ func Compress(w io.Writer, name string, depth int) error {
 		}()
 	}()
 
-	model := NewCTW(make([]int, depth))
+	//model := NewCTW(make([]int, depth))
+	// instead of using a new CTW, load our pretrained FCTW
+	model := NewFCTW(8, make([]int, depth))
+
+	metadata, err := eFS.ReadFile("model.json")
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(metadata, model)
+	if err != nil {
+		return err
+	}
 	witten.Encode(dst, src, model)
 
 	// wait for bit extraction
@@ -181,7 +199,18 @@ func Decompress(w io.Writer, r io.Reader, depth int) error {
 		}()
 	}()
 
-	model := NewCTW(make([]int, depth))
+	// model := NewCTW(make([]int, depth))
+	// instead of using a new CTW, load our pretrained FCTW
+	model := NewFCTW(8, make([]int, depth))
+
+	metadata, err := eFS.ReadFile("model.json")
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(metadata, model)
+	if err != nil {
+		return err
+	}
 	decodeErr := witten.Decode(dst, src, model, numBytes*8)
 
 	if err := <-srcErrc; err != nil {
