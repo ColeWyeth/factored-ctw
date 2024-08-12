@@ -271,4 +271,5 @@ func (model *FCTW) Observe(bit int) {
 	for i := 0; i < model.Block_len; i++ {
 		model.Trees[i].observe(bit)
 	}
+	model.Index = (model.Index + 1) % model.Block_len
 }
