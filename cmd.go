@@ -101,10 +101,10 @@ func Compress(w io.Writer, name string, depth int) error {
 		}()
 	}()
 
-	//model := NewCTW(make([]int, depth))
+	// model := NewCTW(make([]int, depth))
 	// instead of using a new CTW, load our pretrained FCTW
-	model := NewFCTW(8, make([]int, depth))
-
+	//model := NewFCTW(8, make([]int, depth))
+	model := NewVOM(make([]int, depth))
 	metadata, err := eFS.ReadFile("model.json")
 	if err != nil {
 		return err
@@ -201,7 +201,8 @@ func Decompress(w io.Writer, r io.Reader, depth int) error {
 
 	// model := NewCTW(make([]int, depth))
 	// instead of using a new CTW, load our pretrained FCTW
-	model := NewFCTW(8, make([]int, depth))
+	//model := NewFCTW(8, make([]int, depth))
+	model := NewVOM(make([]int, depth))
 
 	metadata, err := eFS.ReadFile("model.json")
 	if err != nil {

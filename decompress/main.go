@@ -5,10 +5,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/ColeWyeth/factored-ctw"
+	ctw "github.com/ColeWyeth/factored-ctw"
 )
 
-var depth = flag.Int("depth", 48, "depth of Context Tree Weighting")
+var depth = flag.Int("depth", 56, "depth of Context Tree Weighting")
 
 func main() {
 	flag.Parse()

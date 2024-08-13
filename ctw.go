@@ -273,3 +273,168 @@ func (model *FCTW) Observe(bit int) {
 	}
 	model.Index = (model.Index + 1) % model.Block_len
 }
+
+// A VOM (variable order Markov) model is an element of the mixture considered by CTW.
+// VOM implements the arithmetic coding Model interface
+// A VOM is produced by context-tree maximization.
+type VOM struct {
+	Root *VOMNode
+	Bits []int
+}
+
+func NewVOM(bits []int) *VOM {
+	root := &VOMNode{
+		true,
+		0.5,
+		0.0,
+		nil,
+		nil,
+	}
+	return &VOM{
+		root,
+		bits,
+	}
+}
+
+type VOMNode struct {
+	Leaf       bool
+	CondProb0  float64
+	MaxLogProb float64
+	Child0     *VOMNode
+	Child1     *VOMNode
+}
+
+// For the moment we only care about creating a VOM model from a CTW model
+func ToVOM(model *CTW) *VOM {
+	// set Bits from CTW
+	// then set root by recursively converting CTW Root.
+	bits := make([]int, len(model.Bits))
+	_ = copy(bits, model.Bits)
+	vom_model := &VOM{
+		ToVOMNode(model.Root),
+		bits,
+	}
+	return vom_model
+}
+
+func ToVOMNode(node *treeNode) *VOMNode {
+	a := float64(node.A)
+	b := float64(node.B)
+	ktp := (a + 0.5) / (a + b + 1.0)
+	if node.Left == nil && node.Right == nil {
+		// fmt.Print("Reached terminal node")
+		return &VOMNode{
+			true,
+			ktp,
+			node.Lktp,
+			nil,
+			nil,
+		}
+	}
+	var LeftVOM *VOMNode = nil
+	var mlp float64 = 0.0
+	if node.Left != nil {
+		LeftVOM = ToVOMNode(node.Left)
+		mlp = LeftVOM.MaxLogProb
+	}
+	var RightVOM *VOMNode = nil
+	var mrp float64 = 0.0
+	if node.Right != nil {
+		RightVOM = ToVOMNode(node.Right)
+		mrp = RightVOM.MaxLogProb
+	}
+	if node.Lktp >= mlp+mrp {
+		// fmt.Print("The lktp was higher!")
+		return &VOMNode{
+			true,
+			ktp,
+			node.Lktp,
+			nil,
+			nil,
+		}
+	} else {
+		// fmt.Print("The lktp was lower!")
+		if LeftVOM == nil {
+			LeftVOM = &VOMNode{
+				true,
+				0.5,
+				0.0,
+				nil,
+				nil,
+			}
+		}
+		if RightVOM == nil {
+			RightVOM = &VOMNode{
+				true,
+				0.5,
+				0.0,
+				nil,
+				nil,
+			}
+		}
+		return &VOMNode{
+			false,
+			-1.0, // This value is irrelevant
+			mlp + mrp,
+			RightVOM,
+			LeftVOM,
+		}
+	}
+
+}
+
+// if node.Left != nil || node.Right != nil {
+// 	var lp float64 = 0
+// 	if node.Left != nil {
+// 		lp = node.Left.LogProb
+// 	}
+// 	var rp float64 = 0
+// 	if node.Right != nil {
+// 		rp = node.Right.LogProb
+// 	}
+// 	w := 0.5
+// 	node.LogProb = logaddexp(math.Log(w)+node.Lktp, math.Log(1-w)+lp+rp)
+// } else {
+// 	node.LogProb = node.Lktp
+// }
+
+// treeNode represents a suffix in a Context Tree Weighting.
+// It holds the log probability of the source sequence given the suffix represented by the node.
+// type treeNode struct {
+// 	LogProb float64 // log probability of suffix
+
+// 	A    uint32  // number of zerRos with suffix
+// 	B    uint32  // number of ones with suffix
+// 	Lktp float64 // log probability of the Krichevsky-Trofimov (KT) Estimation, given our current number of zeros and ones.
+
+// 	Left  *treeNode // the sub-suffix that ends with one
+// 	Right *treeNode // the sub-suffix that ends with zero
+// }
+
+// Prob0 returns the probability that the next bit be zero.
+func (model *VOM) Prob0() float64 {
+	// fmt.Println("Calculating Prob0 with VOM")
+	currNode := model.Root
+	for d := 0; d < len(model.Bits); d++ {
+		if currNode.Leaf {
+			return currNode.CondProb0
+		}
+		if model.Bits[len(model.Bits)-d-1] == 0 {
+			currNode = currNode.Child0
+		} else {
+			currNode = currNode.Child1
+		}
+	}
+	// if currNode.Leaf {
+	// 	fmt.Println("Ended at a terminal leaf")
+	// }
+	return currNode.CondProb0
+}
+
+// Observe updates the model, given that the sequence is followed by bit.
+func (model *VOM) Observe(bit int) {
+	for i := 1; i < len(model.Bits); i++ {
+		model.Bits[i-1] = model.Bits[i]
+	}
+	model.Bits[len(model.Bits)-1] = bit
+}

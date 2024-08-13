@@ -9,12 +9,11 @@ import (
 	"os"
 
 	ctw "github.com/ColeWyeth/factored-ctw"
-	"github.com/ColeWyeth/factored-ctw/ac"
 )
 
-var depth = flag.Int("depth", 48, "depth of Context Tree Weighting")
+var depth = flag.Int("depth", 56, "depth of Context Tree Weighting")
 
-func train_model(name string, model ac.Model) {
+func train_model(name string, model *ctw.CTW) {
 
 	// Borrowed from Encode function
 
@@ -55,6 +54,7 @@ func train_model(name string, model ac.Model) {
 	}
 
 	fmt.Printf("%e\n", model.Prob0())
+	vom_model := ctw.ToVOM(model)
 
 	// TODO: Dump the model as json
 	f1, err := os.Create("model.json")
@@ -62,7 +62,7 @@ func train_model(name string, model ac.Model) {
 		fmt.Println("Error:", err)
 		return
 	}
-	jsonBytes, err := json.Marshal(model)
+	jsonBytes, err := json.Marshal(vom_model)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
@@ -73,7 +73,10 @@ func train_model(name string, model ac.Model) {
 }
 
 func main() {
-	factored_ctw := ctw.NewFCTW(8, make([]int, 48))
-	fmt.Printf("%e\n", factored_ctw.Prob0())
-	train_model("gettysburg.txt", factored_ctw)
+	flag.Parse()
+	//model := ctw.NewFCTW(8, make([]int, *depth))
+	model := ctw.NewCTW(make([]int, *depth))
+	fmt.Printf("%e\n", model.Prob0())
+	fname := "five.wav" //"0ab237b7-fb12-4687-afed-8d1e2070d621.wav" // "gettysburg.txt"
+	train_model(fname, model)
 }
