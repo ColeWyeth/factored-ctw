@@ -14,7 +14,7 @@ var verbose = flag.Bool("verbose", false, "verbosity")
 
 func main() {
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "usage: %s [flags] filename\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "usage: %s [flags] sroucefilename targetfilename\n", os.Args[0])
 		flag.PrintDefaults()
 	}
 	flag.Parse()
@@ -24,7 +24,21 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := ctw.Compress(os.Stdout, name, *depth); err != nil {
+	// a second path for compressed results
+	name2 := flag.Arg(1)
+	if name2 == "" {
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	f, err := os.Create(name2)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when reading input files\n")
+		return
+	}
+	defer f.Close()
+
+	if err := ctw.Compress(f, name, *depth); err != nil {
 		log.Fatalf("%v", err)
 	}
 }

@@ -18,8 +18,8 @@ do
   compressed_file_path="${file}.brainwire"
   decompressed_file_path="${file}.copy"
 
-  ./encode "$file" > "$compressed_file_path"
-  cat "$compressed_file_path" | ./decode > "$decompressed_file_path"
+  ./encode "$file" "$compressed_file_path"
+  ./decode "$compressed_file_path" "$decompressed_file_path"
 
   file_size=$(get_file_size "$file")
   compressed_size=$(get_file_size "$compressed_file_path")
